@@ -1,0 +1,75 @@
+import React, { useEffect, useState } from "react";
+import { ClassComponent } from "./ClassComponent";
+
+const API = "https://jsonplaceholder.typicode.com/users"
+export function App() {
+  const [isShow, setShown] = useState(true);
+
+  const [users, setUsers] = useState();
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState();
+
+  const childComponent = isShow ? <ClassComponent /> : null;
+
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError();
+    setUsers(undefined);
+
+    const controller = new AbortController();
+
+    fetch(API, {
+      signal: controller.signal,
+    })
+      .then((res) => {
+        if (res.status === 200) {
+          return res.json();
+        } else {
+          return Promise.reject(res);
+        }
+      })
+      .then((data) => {
+        // console.log("here");
+        setUsers(data);
+      })
+      .catch((e) => {
+        if (e?.name === "AbortError") return;
+        setHasError(e);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  let jsx;
+
+  if (isLoading) {
+    jsx = "loading...";
+  } else if (hasError != null) {
+    jsx = "Error!!";
+  } else {
+    jsx = <pre>{JSON.stringify(users, null,4)}</pre>;
+  }
+
+  console.log(users);
+  return (
+    <>
+      <button
+        onClick={() => {
+          setShown((s) => !s);
+        }}
+      >
+        show/hide
+      </button>
+      <br />
+      <br />
+      {childComponent}
+
+      {jsx}
+    </>
+  );
+}
